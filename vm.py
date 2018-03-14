@@ -1,6 +1,10 @@
 IP = 0
 MOV = 1
 ADD = 2
+INP = 3
+OUT = 4
+MUL = 5
+STOP = 255
 
 
 class VM:
@@ -9,11 +13,14 @@ class VM:
         self.memory = memory
         self.instruction_size = instruction_size
 
-    def inp(self, value):
-        pass
+    def inp(self, dst):
+        value = int(input())
+        self.memory.write(dst, value)
+        self.next()
 
-    def out(self, value):
-        pass
+    def out(self, src):
+        print(self.memory.read(src))
+        self.next()
 
     def mov(self, dst, src):
         src_value = self.memory.read(src)
@@ -47,19 +54,21 @@ class VM:
         pass
 
     def next(self):
-        next_instruction = self.memory.read(self.ip() + self.instruction_size)
-        self.memory.write(self.ip(), next_instruction)
+        next_instruction = self.ip_value() + self.instruction_size
+        self.memory.write(self.ip_address(), next_instruction)
 
-    def ip(self):
+    def ip_address(self):
         return IP
+    
+    def ip_value(self):
+        return self.memory.read(self.ip_address())
 
     def print(self, cell):
         return self.memory.read(cell)
 
-    def execute_next(self):
-        instruction_code = self.memory.read(self.ip())
-        argument1 = self.memory.read(self.ip() + 1)
-        argument2 = self.memory.read(self.ip() + 2)
+    def execute_next(self, instruction_code):
+        argument1 = self.memory.read(self.ip_value() + 1)
+        argument2 = self.memory.read(self.ip_value() + 2)
 
         if instruction_code == MOV:
             self.mov(argument1, argument2)
@@ -68,3 +77,33 @@ class VM:
         if instruction_code == ADD:
             self.add(argument1, argument2)
             return
+
+        if instruction_code == INP:
+            self.inp(argument1)
+            return
+
+        if instruction_code == OUT:
+            self.out(argument1)
+            return
+
+        if instruction_code == MUL:
+            self.mul(argument1, argument2)
+            return
+
+    def run(self):
+
+        while True:
+            instruction_code = self.memory.read(self.ip_value())
+
+            if instruction_code == STOP:
+                return
+
+            self.execute_next(instruction_code)
+
+    def run_step(self):
+        instruction_code = self.memory.read(self.ip_value())
+
+        if instruction_code == STOP:
+            return
+
+        self.execute_next(instruction_code)
