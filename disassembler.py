@@ -1,4 +1,4 @@
-from instructions import Instructions, Registry
+from instructions import Instructions, Registry, Pointers
 
 import numpy as np
 import sys
@@ -26,12 +26,20 @@ class Disassembler:
 
     def disassembly(self):
 
-        for i in range(Registry.NUM_REGISTERS * 4, len(self.bytecode), 4):  # Skip registers
+        static_begin = self.bytecode[Pointers.STATIC]
+
+        for i in range(Registry.NUM_REGISTERS * 4, static_begin, 4):  # Skip registers
 
             instruction_code = self.bytecode[i]
 
             try:
                 instruction = self.instructions_dict[instruction_code]
+
+                if instruction.lower() == "print":
+                    instruction += " " + self.get_static(self.bytecode[static_begin:],
+                                                         self.bytecode[i + 1])
+                    self.instructions.append(instruction.lower())
+                    continue
 
             except KeyError:
                 print("Instruction not found:", instruction_code, file=sys.stderr)
@@ -63,8 +71,16 @@ class Disassembler:
 
         return ""
 
+    def get_static(self, static_data, num):
+
+        static = ""
+        for i in range(static_data[static_data[num]]):
+            static += chr(static_data[static_data[num] + i + 1])
+        return static[:-1]  # remove /n
+
     def write_to_file(self, filename):
 
         with open(filename, "w") as file:
-            for item in self.instructions:
+            for item in self.instructions[:-1]:
                 file.write("%s\n" % item)
+            file.write("%s" % self.instructions[-1])

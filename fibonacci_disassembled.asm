@@ -38,8 +38,8 @@ mov esi *esp
 pop
 jmp esi
 end
-print eip
-print eip
+print this program calculates n-th fibonacci number
+print enter number n:
 inp eax
 mov esi eip
 addval esi 16
@@ -48,6 +48,3 @@ push eax
 call 1
 out edx
 stop
-add eip eip
-jmp ecx
-add esp *****************************************************************************************************esp
