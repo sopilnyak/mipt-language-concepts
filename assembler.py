@@ -23,6 +23,7 @@ class Assembler:
         with open(filename) as file:
             lines = file.readlines()
             for line in lines:
+                line = line.split("  ;", 1)[0]  # remove comments
                 line = line.strip('\n').split(' ')
 
                 if len(line) < 1:
@@ -40,23 +41,28 @@ class Assembler:
                 self.bytecode.append(instruction_code)
 
                 if len(line) > 1:
-                    argument1 = self.parse_argument(line[1])
-                    self.bytecode.append(argument1 * 4)
+                    argument, depth = self.parse_argument(line[1])
+                    self.bytecode.append(argument)
                 else:
                     self.bytecode.append(0)
 
                 if len(line) > 2:
-                    argument2 = self.parse_argument(line[2])
-                    self.bytecode.append(argument2 * 4)
+                    argument, depth = self.parse_argument(line[2])
+                    self.bytecode.append(argument)
+                    self.bytecode.append(depth)
                 else:
-                    self.bytecode.append(0)
+                    for _ in range(2):
+                        self.bytecode.append(0)
 
-                self.bytecode.append(0)
+                self.bytecode[4] = len(self.bytecode) - 4  # SP value
 
     def parse_argument(self, argument):
 
+        depth = argument.count("*")
+        argument = argument[depth:]
+
         try:
-            argument_code = vars(Registry)[argument.lower()]
+            argument_code = vars(Registry)[argument.lower()] * 4
 
         except KeyError:
 
@@ -67,8 +73,8 @@ class Assembler:
                 print("Wrong argument:", argument, file=sys.stderr)
                 return
 
-        return argument_code
+        return argument_code, depth
 
     def write_to_file(self, filename):
 
-        np.array(self.bytecode, dtype=np.int32).tofile(filename)
+        np.array(self.bytecode, dtype=int).tofile(filename)

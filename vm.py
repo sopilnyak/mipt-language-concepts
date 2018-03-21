@@ -7,7 +7,13 @@ class VM:
         self.memory = memory
         self.instruction_size = instruction_size
         self.is_in_function = False
-        self.return_addresses = {}
+        self.function_ips = {}
+
+    def get(self, src, depth=0):
+        while depth >= 0:
+            src = self.memory.read(src)
+            depth -= 1
+        return src
 
     def inp(self, dst):
         value = int(input("Input: "))
@@ -16,8 +22,8 @@ class VM:
     def out(self, src):
         print(self.memory.read(src))
 
-    def mov(self, dst, src):
-        src_value = self.memory.read(src)
+    def mov(self, dst, src, depth=0):
+        src_value = self.get(src, depth)
         self.memory.write(dst, src_value)
 
     def inc(self, src):
@@ -29,18 +35,23 @@ class VM:
         right_value = self.memory.read(right)
         self.memory.write(left, left_value + right_value)
 
+    def add_val(self, left, right_value):
+        left_value = self.memory.read(left)
+        self.memory.write(left, left_value + right_value)
+
     def sub(self, left, right):
         left_value = self.memory.read(left)
         right_value = self.memory.read(right)
+        self.memory.write(left, left_value - right_value)
+
+    def sub_val(self, left, right_value):
+        left_value = self.memory.read(left)
         self.memory.write(left, left_value - right_value)
 
     def mul(self, left, right):
         left_value = self.memory.read(left)
         right_value = self.memory.read(right)
         self.memory.write(left, left_value * right_value)
-
-    def jmp(self, dst):
-        self.memory.write(self.ip_address(), self.memory[dst])
 
     def stop(self):
         pass
@@ -64,37 +75,70 @@ class VM:
     def print(self, cell):
         return self.memory.read(cell)
 
-    def function_begin(self, name_address):
+    def function_begin(self, name):
         self.is_in_function = True
-        name = self.memory.read(name_address)
-        self.return_addresses[name] = self.ip_value() + 4
+        self.function_ips[name] = self.ip_value()
 
     def function_end(self):
         self.is_in_function = False
 
     def stack_pop(self):
-        self.add(self.sp_address(), 1)
+        self.sub_val(self.sp_address(), 4)
 
     def stack_push(self, address):
-        self.sub(self.sp_address(), 1)
+        self.add_val(self.sp_address(), 4)
         self.memory.write(self.sp_value(), self.memory.read(address))
 
-    def stack_call(self, address):
-        self.stack_push(self.ip_value() + 4)
-        value = self.memory.read(address)
-        self.memory.write(self.ip_address(), self.return_addresses[value])
+    def call(self, name):
+        self.memory.write(self.ip_address(), self.function_ips[name])
+
+    def jmp(self, dst):
+        self.memory.write(self.ip_address(), self.memory.read(dst))
+
+    def jump_if(self, src, diff):
+        value = self.memory.read(src)
+        if value > 0:
+            self.add_val(self.ip_address(), diff * 4)
+        else:
+            self.next()
 
     def execute_next(self, instruction_code):
+
+        if instruction_code == Instructions.END:
+            self.function_end()
+            self.next()
+            return
+
+        if self.is_in_function:  # function declaration
+            self.next()
+            return
+
         argument1 = self.memory.read(self.ip_value() + 1)
         argument2 = self.memory.read(self.ip_value() + 2)
+        depth = self.memory.read(self.ip_value() + 3)
 
         if instruction_code == Instructions.MOV:
-            self.mov(argument1, argument2)
+            self.mov(argument1, argument2, depth)
             self.next()
             return
 
         if instruction_code == Instructions.ADD:
             self.add(argument1, argument2)
+            self.next()
+            return
+
+        if instruction_code == Instructions.SUB:
+            self.sub(argument1, argument2)
+            self.next()
+            return
+
+        if instruction_code == Instructions.ADDVAL:
+            self.add_val(argument1, argument2)
+            self.next()
+            return
+
+        if instruction_code == Instructions.SUBVAL:
+            self.sub_val(argument1, argument2)
             self.next()
             return
 
@@ -123,11 +167,6 @@ class VM:
             self.next()
             return
 
-        if instruction_code == Instructions.END:
-            self.function_end()
-            self.next()
-            return
-
         if instruction_code == Instructions.PUSH:
             self.stack_push(argument1)
             self.next()
@@ -136,6 +175,15 @@ class VM:
         if instruction_code == Instructions.POP:
             self.stack_pop()
             self.next()
+            return
+
+        if instruction_code == Instructions.CALL:
+            self.call(argument1)
+            self.next()
+            return
+
+        if instruction_code == Instructions.JMPIF:
+            self.jump_if(argument1, argument2)
             return
 
     def run(self):
