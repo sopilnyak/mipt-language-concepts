@@ -1,8 +1,5 @@
 class Instructions:
 
-    IP = 0  # Instruction pointer
-    STATIC = 2  # Pointer to beginning of static data
-    SP = 4  # Stack pointer
     MOV = 1
     ADD = 2
     INP = 3
@@ -20,6 +17,13 @@ class Instructions:
     SUBVAL = 15
     PRINT = 16
     STOP = 255
+
+
+class Pointers:
+
+    IP = 0  # Instruction pointer
+    STATIC = 2  # Pointer to beginning of static data
+    SP = 4  # Stack pointer
 
 
 class Registry:

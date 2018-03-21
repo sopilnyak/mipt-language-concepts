@@ -1,4 +1,4 @@
-from instructions import Instructions
+from instructions import Instructions, Pointers
 
 
 class VM:
@@ -69,19 +69,19 @@ class VM:
         self.memory.write(self.ip_address(), next_instruction)
 
     def ip_address(self):
-        return Instructions.IP
+        return Pointers.IP
     
     def ip_value(self):
         return self.memory.read(self.ip_address())
 
     def sp_address(self):
-        return Instructions.SP
+        return Pointers.SP
 
     def sp_value(self):
         return self.memory.read(self.sp_address())
 
     def static_begin(self):
-        return self.memory.read(Instructions.STATIC)
+        return self.memory.read(Pointers.STATIC)
 
     def print(self, cell):
         return self.memory.read(cell)

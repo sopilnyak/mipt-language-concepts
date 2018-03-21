@@ -1,4 +1,4 @@
-from instructions import Instructions, Registry
+from instructions import Instructions, Registry, Pointers
 
 import sys
 import numpy as np
@@ -6,63 +6,66 @@ import numpy as np
 
 class Assembler:
 
-    def __init__(self):
+    def __init__(self, filename):
 
         self.bytecode = []
         self.static_variables = []
+
+        with open(filename) as file:
+            self.code = file.readlines()
+
+        self.generate()
 
     def init_registers(self):
 
         for i in range(Registry.NUM_REGISTERS):  # registers
             self.bytecode += [0 for _ in range(4)]
-        self.bytecode[Instructions.IP] = Registry.NUM_REGISTERS * 4  # IP value
+        self.bytecode[Pointers.IP] = Registry.NUM_REGISTERS * 4  # IP value
 
-    def generate(self, filename):
+    def generate(self):
 
         self.init_registers()
 
-        with open(filename) as file:
-            lines = file.readlines()
-            for line_string in lines:
-                line_string = line_string.split("  ;", 1)[0]  # remove comments
-                line = line_string.strip('\n').split(' ')
+        for line_string in self.code:
+            line_string = line_string.split("  ;", 1)[0]  # remove comments
+            line = line_string.strip('\n').split(' ')
 
-                if len(line) < 1:
-                    continue
+            if len(line) < 1:
+                continue
 
-                instruction = line[0]
+            instruction = line[0]
 
-                try:
-                    instruction_code = vars(Instructions)[instruction.upper()]
+            try:
+                instruction_code = vars(Instructions)[instruction.upper()]
 
-                except KeyError:
-                    print("Instruction not found:", instruction, file=sys.stderr)
-                    return
+            except KeyError:
+                print("Instruction not found:", instruction, file=sys.stderr)
+                return
 
-                if instruction_code == Instructions.PRINT:  # static print
-                    self.static_variables.append(line_string.split(instruction + " ")[1])
-                    line = [line_string.split(instruction + " ")[1], str(len(self.static_variables) - 1)]
+            if instruction_code == Instructions.PRINT:  # static print
+                self.static_variables.append(line_string.split(instruction + " ")[1])
+                line = [line_string.split(instruction + " ")[1], str(len(self.static_variables) - 1)]
 
-                self.bytecode.append(instruction_code)
+            self.bytecode.append(instruction_code)
 
-                if len(line) > 1:
-                    argument, depth = self.parse_argument(line[1])
-                    self.bytecode.append(argument)
-                else:
+            if len(line) > 1:
+                argument, depth = self.parse_argument(line[1])
+                self.bytecode.append(argument)
+            else:
+                self.bytecode.append(0)
+
+            if len(line) > 2:
+                argument, depth = self.parse_argument(line[2])
+                self.bytecode.append(argument)
+                self.bytecode.append(depth)
+            else:
+                for _ in range(2):
                     self.bytecode.append(0)
 
-                if len(line) > 2:
-                    argument, depth = self.parse_argument(line[2])
-                    self.bytecode.append(argument)
-                    self.bytecode.append(depth)
-                else:
-                    for _ in range(2):
-                        self.bytecode.append(0)
-
-        self.bytecode[Instructions.STATIC] = len(self.bytecode)  # static begin
+        self.bytecode[Pointers.STATIC] = len(self.bytecode)  # static begin
 
         static_data = self.init_static_variables()
-        self.bytecode[Instructions.SP] = len(self.bytecode) + len(static_data) - 4  # SP value
+        self.bytecode[Pointers.SP] = len(self.bytecode) + len(static_data) - 4  # SP value
         self.bytecode += static_data
 
     def init_static_variables(self):
