@@ -16,11 +16,19 @@ class VM:
         return src
 
     def inp(self, dst):
-        value = int(input("Input: "))
+        value = int(input())
         self.memory.write(dst, value)
 
     def out(self, src):
         print(self.memory.read(src))
+
+    def print_static(self, value):
+        address = self.memory.read(self.static_begin() + value)
+        length = self.memory.read(self.static_begin() + address)
+        output = ""
+        for i in range(length):
+            output += chr(self.memory.read(self.static_begin() + address + i + 1))
+        print(output, end="")
 
     def mov(self, dst, src, depth=0):
         src_value = self.get(src, depth)
@@ -71,6 +79,9 @@ class VM:
 
     def sp_value(self):
         return self.memory.read(self.sp_address())
+
+    def static_begin(self):
+        return self.memory.read(Instructions.STATIC)
 
     def print(self, cell):
         return self.memory.read(cell)
@@ -149,6 +160,11 @@ class VM:
 
         if instruction_code == Instructions.OUT:
             self.out(argument1)
+            self.next()
+            return
+
+        if instruction_code == Instructions.PRINT:
+            self.print_static(argument1)
             self.next()
             return
 

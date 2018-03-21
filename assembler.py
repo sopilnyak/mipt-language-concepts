@@ -9,12 +9,13 @@ class Assembler:
     def __init__(self):
 
         self.bytecode = []
+        self.static_variables = []
 
     def init_registers(self):
 
         for i in range(Registry.NUM_REGISTERS):  # registers
             self.bytecode += [0 for _ in range(4)]
-        self.bytecode[0] = Registry.NUM_REGISTERS * 4  # IP value
+        self.bytecode[Instructions.IP] = Registry.NUM_REGISTERS * 4  # IP value
 
     def generate(self, filename):
 
@@ -22,9 +23,9 @@ class Assembler:
 
         with open(filename) as file:
             lines = file.readlines()
-            for line in lines:
-                line = line.split("  ;", 1)[0]  # remove comments
-                line = line.strip('\n').split(' ')
+            for line_string in lines:
+                line_string = line_string.split("  ;", 1)[0]  # remove comments
+                line = line_string.strip('\n').split(' ')
 
                 if len(line) < 1:
                     continue
@@ -37,6 +38,10 @@ class Assembler:
                 except KeyError:
                     print("Instruction not found:", instruction, file=sys.stderr)
                     return
+
+                if instruction_code == Instructions.PRINT:  # static print
+                    self.static_variables.append(line_string.split(instruction + " ")[1])
+                    line = [line_string.split(instruction + " ")[1], str(len(self.static_variables) - 1)]
 
                 self.bytecode.append(instruction_code)
 
@@ -54,7 +59,32 @@ class Assembler:
                     for _ in range(2):
                         self.bytecode.append(0)
 
-                self.bytecode[4] = len(self.bytecode) - 4  # SP value
+        self.bytecode[Instructions.STATIC] = len(self.bytecode)  # static begin
+
+        static_data = self.init_static_variables()
+        self.bytecode[Instructions.SP] = len(self.bytecode) + len(static_data) - 4  # SP value
+        self.bytecode += static_data
+
+    def init_static_variables(self):
+        size = len(self.static_variables)
+
+        for variable in self.static_variables:
+            size += len(variable) + 1
+
+        data = np.zeros(size, dtype=int)
+        offset = len(self.static_variables)
+
+        for i in range(len(self.static_variables)):
+            data[i] = offset
+            variable = self.static_variables[i]
+            data[offset] = len(variable)
+            offset += 1
+
+            for char in variable:
+                data[offset] = ord(char)
+                offset += 1
+
+        return data.tolist()
 
     def parse_argument(self, argument):
 

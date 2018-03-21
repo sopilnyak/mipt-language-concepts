@@ -1,6 +1,7 @@
 class Instructions:
 
     IP = 0  # Instruction pointer
+    STATIC = 2  # Pointer to beginning of static data
     SP = 4  # Stack pointer
     MOV = 1
     ADD = 2
@@ -17,6 +18,7 @@ class Instructions:
     CALL = 13
     ADDVAL = 14
     SUBVAL = 15
+    PRINT = 16
     STOP = 255
 
 
