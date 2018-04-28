@@ -1,4 +1,4 @@
-#include "vitrual.h"
+#include "virtual.h"
 
 int main() {
     INIT_METHOD(Base, both)

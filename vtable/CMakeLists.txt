@@ -3,6 +3,6 @@ project(vtable)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(vtable main.cpp vtable.h vitrual.h)
+add_executable(vtable main.cpp vtable.h virtual.h)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
