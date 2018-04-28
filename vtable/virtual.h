@@ -29,7 +29,7 @@ public: \
     static Vtable vtable; \
     Vtable* vptr;
 
-#define END_DERIVED(Name, BaseName) \
+#define END_DERIVED(Name) \
 }; \
 Vtable Name::vtable;
 
@@ -41,31 +41,6 @@ Vtable Name::vtable;
         ((func) ptr)(); \
         std::cout << (*object).a << std::endl; \
     } \
-}
-
-
-VIRTUAL_CLASS(Base)
-    int a;
-END(Base)
-
-DECLARE_METHOD(Base, both) {
-    std::cout << "Base::both" << std::endl;
-}
-
-DECLARE_METHOD(Base, onlyBase) {
-    std::cout << "Base::onlyBase" << std::endl;
-}
-
-VIRTUAL_CLASS_DERIVED(Derived, Base)
-    int a;
-END_DERIVED(Derived, Base)
-
-DECLARE_METHOD(Derived, both) {
-    std::cout << "Derived::both" << std::endl;
-}
-
-DECLARE_METHOD(Derived, onlyDerived) {
-    std::cout << "Derived::onlyDerived" << std::endl;
 }
 
 #endif //VTABLE_VITRUAL_H
